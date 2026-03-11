@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Indicators &amp; Cycles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #06080F;
+    --bg2:       #0C1020;
+    --bg3:       #111827;
+    --border:    rgba(255,255,255,0.07);
+    --border2:   rgba(255,255,255,0.12);
+    --text:      #E8EAF0;
+    --muted:     #6B7394;
+    --gold:      #C9A84C;
+    --gold2:     #E8C76A;
+    --cyan:      #38BDF8;
+    --green:     #34D399;
+    --red:       #F87171;
+    --amber:     #FBBF24;
+    --purple:    #A78BFA;
+    --phase-trough:         #6366F1;
+    --phase-early:          #38BDF8;
+    --phase-expansion:      #34D399;
+    --phase-overheating:    #FBBF24;
+    --phase-peak:           #F97316;
+    --phase-recession:      #F87171;
+    --phase-late-recession: #A78BFA;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+
+  /* ── Grid background ── */
+  .grid-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* ── Layout ── */
+  .app { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border2);
+    margin-bottom: 28px;
+  }
+  .header-left { display: flex; align-items: baseline; gap: 16px; }
+  .logo-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px; font-weight: 600; letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .logo-title span { color: var(--gold); font-style: italic; }
+  .logo-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--muted); letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .last-updated {
+    font-size: 10px; color: var(--muted); letter-spacing: 0.1em;
+  }
+  .pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+  /* ── Region Selector ── */
+  .region-bar {
+    display: flex; gap: 6px; margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+  .region-btn {
+    padding: 6px 18px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+  .region-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .region-btn.active {
+    background: var(--gold); border-color: var(--gold);
+    color: var(--bg); font-weight: 500;
+  }
+
+  /* ── Section title ── */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+
+  /* ── Main cycle card ── */
+  .main-cycle-card {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 2px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    position: relative; overflow: hidden;
+  }
+  .main-cycle-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .cycle-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+  .cycle-phase-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px;
+    border: 1px solid currentColor;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  .cycle-score-box { text-align: right; }
+  .cycle-score-label { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+  .cycle-score-value { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 600; color: var(--gold2); }
+
+  /* ── Sinusoid ── */
+  #sinusoid-canvas { width: 100%; height: 160px; display: block; }
+  .sine-labels {
+    display: flex; justify-content: space-between;
+    margin-top: 8px; padding: 0 16px;
+  }
+  .sine-label { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
+
+  /* ── 3-column grid for indicators ── */
+  .indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .indicators-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1100px) { .indicators-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .indicator-column {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 2px; overflow: hidden;
+  }
+  .col-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .col-header-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .col-header-title { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+  .col-leading .col-header-dot { background: var(--cyan); }
+  .col-coincident .col-header-dot { background: var(--gold); }
+  .col-lagging .col-header-dot { background: var(--purple); }
+
+  /* ── Indicator Row ── */
+  .ind-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 12px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.15s;
+  }
+  .ind-row:last-child { border-bottom: none; }
+  .ind-row:hover { background: rgba(255,255,255,0.025); }
+  .ind-name { color: var(--text); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ind-date { font-size: 9px; color: var(--muted); margin-top: 1px; }
+  .ind-right { text-align: right; }
+  .ind-value { font-size: 12px; color: var(--gold2); font-weight: 500; }
+  .ind-change { font-size: 10px; margin-top: 1px; }
+  .up   { color: var(--green); }
+  .down { color: var(--red); }
+  .flat { color: var(--muted); }
+
+  /* ── Cycles grid ── */
+  .cycles-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 1000px) { .cycles-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px)  { .cycles-grid { grid-template-columns: 1fr; } }
+
+  .cycle-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 2px; padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .cycle-card:hover { border-color: var(--border2); }
+  .cycle-card-title {
+    font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 4px;
+  }
+  .cycle-card-phase {
+    font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600;
+    color: var(--text); margin-bottom: 10px;
+  }
+  .cycle-card-desc { font-size: 10px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+
+  /* ── Progress bar ── */
+  .progress-wrap { margin-top: 8px; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 9px; color: var(--muted); }
+  .progress-bar { height: 3px; background: var(--border2); border-radius: 1px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 1px; transition: width 1s ease; }
+
+  /* ── Presidential Cycle Card ── */
+  .presidential-card {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 2px; padding: 20px 24px; margin-bottom: 24px;
+    position: relative; overflow: hidden;
+  }
+  .pres-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .pres-grid { grid-template-columns: 1fr; } }
+  .year-bars { display: flex; gap: 8px; align-items: flex-end; height: 80px; }
+  .year-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .year-bar {
+    width: 100%; border-radius: 1px 1px 0 0;
+    background: var(--border2); position: relative;
+    transition: height 0.8s ease;
+  }
+  .year-bar.active { background: var(--gold); }
+  .year-bar-label { font-size: 9px; color: var(--muted); text-align: center; }
+  .year-bar-val   { font-size: 9px; color: var(--text); text-align: center; }
+
+  /* ── Seasonal Grid ── */
+  .monthly-grid {
+    display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px;
+    margin-top: 8px;
+  }
+  .month-cell {
+    text-align: center; padding: 6px 2px; border-radius: 1px;
+    position: relative;
+  }
+  .month-cell.current { border: 1px solid var(--gold); }
+  .month-name { font-size: 9px; color: var(--muted); display: block; margin-bottom: 3px; }
+  .month-val  { font-size: 10px; font-weight: 500; }
+
+  /* ── Decennial ── */
+  .decennial-bars {
+    display: flex; gap: 4px; align-items: flex-end;
+    height: 70px; margin-top: 8px;
+  }
+  .dec-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .dec-bar { width: 100%; border-radius: 1px 1px 0 0; min-height: 2px; background: var(--border2); }
+  .dec-bar.active { background: var(--gold); }
+  .dec-bar.positive { background: rgba(52,211,153,0.4); }
+  .dec-bar.negative { background: rgba(248,113,113,0.4); }
+  .dec-bar.active.positive { background: var(--gold); }
+  .dec-digit { font-size: 9px; color: var(--muted); }
+  .dec-val   { font-size: 8px; color: var(--muted); }
+
+  /* ── Fed Rate Cycle ── */
+  .rate-timeline {
+    display: flex; align-items: center; gap: 0; margin-top: 10px;
+    height: 28px; position: relative;
+  }
+  .rate-seg { flex: 1; height: 6px; }
+  .rate-marker {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--gold); border: 2px solid var(--bg2);
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    box-shadow: 0 0 8px var(--gold);
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── Tooltip ── */
+  .tooltip {
+    position: fixed; background: var(--bg3); border: 1px solid var(--border2);
+    padding: 6px 10px; font-size: 10px; color: var(--text);
+    pointer-events: none; z-index: 100; display: none; max-width: 200px;
+  }
+
+  /* ── Fade in animation ── */
+  .fade-in { animation: fadeIn 0.5s ease forwards; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<div class="app">
+  <!-- ── Header ── -->
+  <header>
+    <div class="header-left">
+      <div>
+        <div class="logo-title">Indicators <span>&</span> Cycles</div>
+        <div class="logo-sub">Economic Intelligence Dashboard</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="last-updated"><span class="pulse"></span><span id="last-updated-text">Loading…</span></div>
+    </div>
+  </header>
+
+  <!-- ── Region Selector ── -->
+  <div class="region-bar" id="region-bar">
+    <button class="region-btn active" data-region="US">🇺🇸 United States</button>
+    <button class="region-btn" data-region="EU">🇪🇺 Euro Zone</button>
+    <button class="region-btn" data-region="CN">🇨🇳 China</button>
+    <button class="region-btn" data-region="JP">🇯🇵 Japan</button>
+    <button class="region-btn" data-region="UK">🇬🇧 United Kingdom</button>
+  </div>
+
+  <!-- ── Main Economic Cycle ── -->
+  <div class="section-title">Economic Cycle — Business Cycle Clock</div>
+  <div class="main-cycle-card fade-in" id="main-cycle-card">
+    <div class="cycle-header">
+      <div>
+        <div class="cycle-phase-badge" id="phase-badge">—</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:8px;letter-spacing:0.08em;" id="phase-description">—</div>
+      </div>
+      <div class="cycle-score-box">
+        <div class="cycle-score-label">Composite Score</div>
+        <div class="cycle-score-value" id="cycle-score-val">—</div>
+      </div>
+    </div>
+    <canvas id="sinusoid-canvas" height="160"></canvas>
+    <div class="sine-labels">
+      <div class="sine-label">Trough</div>
+      <div class="sine-label">Early<br/>Expansion</div>
+      <div class="sine-label">Expansion</div>
+      <div class="sine-label">Overheating</div>
+      <div class="sine-label">Peak</div>
+      <div class="sine-label">Recession</div>
+      <div class="sine-label">Late<br/>Recession</div>
+      <div class="sine-label">Trough</div>
+    </div>
+  </div>
+
+  <!-- ── Indicators ── -->
+  <div class="section-title">Composite Indicators</div>
+  <div class="indicators-grid fade-in" id="indicators-grid">
+    <div class="indicator-column col-leading">
+      <div class="col-header">
+        <div class="col-header-dot"></div>
+        <div class="col-header-title" style="color:var(--cyan)">Leading</div>
+      </div>
+      <div id="leading-list"></div>
+    </div>
+    <div class="indicator-column col-coincident">
+      <div class="col-header">
+        <div class="col-header-dot"></div>
+        <div class="col-header-title" style="color:var(--gold)">Coincident</div>
+      </div>
+      <div id="coincident-list"></div>
+    </div>
+    <div class="indicator-column col-lagging">
+      <div class="col-header">
+        <div class="col-header-dot"></div>
+        <div class="col-header-title" style="color:var(--purple)">Lagging</div>
+      </div>
+      <div id="lagging-list"></div>
+    </div>
+  </div>
+
+  <!-- ── Long-term Cycles ── -->
+  <div class="section-title">Long-term Cycles</div>
+  <div class="cycles-grid fade-in" id="long-cycles-grid">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- ── Cyclical / Statistical Cycles ── -->
+  <div class="section-title">Market Cycles & Seasonality</div>
+  <div class="cycles-grid fade-in" id="market-cycles-grid">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- ── Presidential Cycle ── -->
+  <div class="section-title">US Presidential Cycle</div>
+  <div class="presidential-card fade-in" id="presidential-card">
+    <!-- Rendered by JS -->
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════════════════
+
+let ALL_DATA = null;
+let currentRegion = 'US';
+
+async function loadData() {
+  try {
+    const res = await fetch('./data/indicators.json?v=' + Date.now());
+    ALL_DATA = await res.json();
+  } catch (e) {
+    console.warn('Could not load indicators.json, using embedded fallback.', e);
+    ALL_DATA = FALLBACK_DATA;
+  }
+  render(currentRegion);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════════════
+
+function render(region) {
+  const regionData = ALL_DATA.regions[region];
+  if (!regionData) return;
+
+  // Header
+  const meta = ALL_DATA.meta || {};
+  document.getElementById('last-updated-text').textContent =
+    meta.last_updated ? 'Updated ' + formatDate(meta.last_updated) : 'Live data';
+
+  // Sinusoid
+  renderSinusoid(regionData.cycle_angle_deg || 90, regionData.cycle_phase || 'expansion');
+
+  // Phase badge
+  const phaseInfo = PHASE_CONFIG[regionData.cycle_phase] || PHASE_CONFIG['expansion'];
+  const badge = document.getElementById('phase-badge');
+  badge.textContent = phaseInfo.label;
+  badge.style.color = phaseInfo.color;
+  badge.style.borderColor = phaseInfo.color;
+
+  document.getElementById('phase-description').textContent = phaseInfo.description;
+  document.getElementById('cycle-score-val').textContent =
+    typeof regionData.cycle_score === 'number'
+      ? (regionData.cycle_score > 0 ? '+' : '') + regionData.cycle_score.toFixed(2)
+      : '—';
+
+  // Indicators
+  renderIndicatorList('leading-list',    regionData.indicators.leading    || []);
+  renderIndicatorList('coincident-list', regionData.indicators.coincident || []);
+  renderIndicatorList('lagging-list',    regionData.indicators.lagging    || []);
+
+  // Cycles
+  renderLongCycles();
+  renderMarketCycles();
+  renderPresidentialCycle();
+}
+
+// ── Sinusoid ──────────────────────────────────────────────────────
+
+function renderSinusoid(angleDeg, phase) {
+  const canvas = document.getElementById('sinusoid-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth;
+  const H = 160;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD = 20;
+  const cw = W - PAD * 2;
+  const cy = H / 2;
+  const amp = (H - 40) / 2;
+
+  // Phase color bands (subtle background shading)
+  const phaseColors = [
+    { label: 'Trough',         color: 'rgba(99,102,241,0.04)'  },
+    { label: 'Early Expansion',color: 'rgba(56,189,248,0.04)'  },
+    { label: 'Expansion',      color: 'rgba(52,211,153,0.04)'  },
+    { label: 'Overheating',    color: 'rgba(251,191,36,0.04)'  },
+    { label: 'Peak',           color: 'rgba(249,115,22,0.04)'  },
+    { label: 'Recession',      color: 'rgba(248,113,113,0.04)' },
+    { label: 'Late Recession', color: 'rgba(167,139,250,0.04)' },
+    { label: 'Trough',         color: 'rgba(99,102,241,0.04)'  },
+  ];
+  const segW = cw / 8;
+  phaseColors.forEach((p, i) => {
+    ctx.fillStyle = p.color;
+    ctx.fillRect(PAD + i * segW, 0, segW, H);
+  });
+
+  // Vertical phase dividers
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(PAD + i * segW, 0);
+    ctx.lineTo(PAD + i * segW, H);
+    ctx.stroke();
+  }
+
+  // Center line
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath(); ctx.moveTo(PAD, cy); ctx.lineTo(PAD + cw, cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Glow gradient for the curve
+  const grad = ctx.createLinearGradient(PAD, 0, PAD + cw, 0);
+  const gradStops = [
+    [0,    '#6366F1'], [0.125,'#38BDF8'], [0.25, '#34D399'],
+    [0.375,'#FBBF24'], [0.5,  '#F97316'], [0.625,'#F87171'],
+    [0.75, '#A78BFA'], [0.875,'#6366F1'], [1,    '#38BDF8'],
+  ];
+  gradStops.forEach(([stop, color]) => grad.addColorStop(stop, color));
+
+  // Shadow/glow pass
+  ctx.shadowColor = 'rgba(201,168,76,0.4)';
+  ctx.shadowBlur  = 12;
+  ctx.strokeStyle = grad;
+  ctx.lineWidth   = 2.5;
+  ctx.beginPath();
+  for (let px = 0; px <= cw; px++) {
+    const t = (px / cw) * Math.PI * 2;
+    const y = cy - Math.sin(t) * amp;
+    if (px === 0) ctx.moveTo(PAD + px, y); else ctx.lineTo(PAD + px, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // ── Current position dot ──
+  const angleRad = (angleDeg / 360) * Math.PI * 2;
+  const dotX = PAD + (angleDeg / 360) * cw;
+  const dotY = cy - Math.sin(angleRad) * amp;
+  const phaseInfo = PHASE_CONFIG[phase] || PHASE_CONFIG['expansion'];
+
+  // Pulse ring
+  ctx.beginPath();
+  ctx.arc(dotX, dotY, 10, 0, Math.PI * 2);
+  ctx.strokeStyle = phaseInfo.color + '55';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
+  ctx.fillStyle = phaseInfo.color;
+  ctx.shadowColor = phaseInfo.color;
+  ctx.shadowBlur  = 16;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Dot label
+  ctx.font = '9px "DM Mono"';
+  ctx.fillStyle = phaseInfo.color;
+  ctx.textAlign = 'center';
+  const labelY = dotY < cy ? dotY - 14 : dotY + 20;
+  ctx.fillText('NOW', dotX, labelY);
+}
+
+// ── Indicator List ────────────────────────────────────────────────
+
+function renderIndicatorList(containerId, indicators) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  if (!indicators.length) {
+    el.innerHTML = '<div style="padding:12px 16px;font-size:10px;color:var(--muted)">No data available</div>';
+    return;
+  }
+  indicators.forEach(ind => {
+    const change = ind.previous && ind.previous !== 0
+      ? ((ind.value - ind.previous) / Math.abs(ind.previous) * 100)
+      : 0;
+    const changeClass = change > 0.05 ? 'up' : change < -0.05 ? 'down' : 'flat';
+    const changeSign  = change > 0.05 ? '▲' : change < -0.05 ? '▼' : '→';
+    const row = document.createElement('div');
+    row.className = 'ind-row';
+    row.innerHTML = `
+      <div>
+        <div class="ind-name" title="${ind.name}">${ind.name}</div>
+        <div class="ind-date">${ind.date || '—'} · <span style="color:var(--muted)">${ind.source || ''}</span></div>
+      </div>
+      <div class="ind-right">
+        <div class="ind-value">${formatVal(ind.value, ind.unit)}</div>
+        <div class="ind-change ${changeClass}">${changeSign} ${Math.abs(change).toFixed(1)}%</div>
+      </div>`;
+    el.appendChild(row);
+  });
+}
+
+// ── Long-term Cycles ─────────────────────────────────────────────
+
+function renderLongCycles() {
+  const cycles = ALL_DATA.cycles;
+  const grid = document.getElementById('long-cycles-grid');
+  grid.innerHTML = '';
+
+  const longCycles = [
+    {
+      title: 'Kondratieff Wave',
+      subtitle: '~50–60 year super-cycle',
+      phase: cycles.kondratieff?.current_season || '—',
+      desc: cycles.kondratieff?.description || '',
+      position: cycles.kondratieff?.position_pct || 0,
+      color: '#A78BFA',
+    },
+    {
+      title: 'Juglar Cycle',
+      subtitle: '~7–11 year investment cycle',
+      phase: cycles.juglar?.phase || '—',
+      desc: `Year ${cycles.juglar?.current_year_in_cycle || '?'} of ~${cycles.juglar?.cycle_length_avg || 9}. Last trough: ${cycles.juglar?.last_trough || '?'}`,
+      position: cycles.juglar?.position_pct || 0,
+      color: '#38BDF8',
+    },
+    {
+      title: 'Kitchin Cycle',
+      subtitle: '~3–5 year inventory cycle',
+      phase: cycles.kitchin?.phase || '—',
+      desc: `Year ${cycles.kitchin?.current_year_in_cycle || '?'} of ~${cycles.kitchin?.cycle_length_avg || 4}. Last trough: ${cycles.kitchin?.last_trough || '?'}`,
+      position: cycles.kitchin?.position_pct || 0,
+      color: '#34D399',
+    },
+    {
+      title: 'Kuznets Cycle',
+      subtitle: '~15–25 year real estate cycle',
+      phase: cycles.kuznets?.phase || '—',
+      desc: `Year ${cycles.kuznets?.current_year_in_cycle || '?'} of ~${cycles.kuznets?.cycle_length_avg || 18}. Last trough: ${cycles.kuznets?.last_trough || '?'}`,
+      position: cycles.kuznets?.position_pct || 0,
+      color: '#FBBF24',
+    },
+  ];
+
+  longCycles.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'cycle-card';
+    card.innerHTML = `
+      <div class="cycle-card-title">${c.title}</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">${c.subtitle}</div>
+      <div class="cycle-card-phase" style="color:${c.color}">${c.phase}</div>
+      <div class="cycle-card-desc">${c.desc}</div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Cycle start</span><span>${c.position}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${c.position}%;background:${c.color}"></div></div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── Market Cycles ────────────────────────────────────────────────
+
+function renderMarketCycles() {
+  const cycles = ALL_DATA.cycles;
+  const grid = document.getElementById('market-cycles-grid');
+  grid.innerHTML = '';
+
+  // Credit Cycle
+  const creditCard = makeSimpleCycleCard(
+    'Credit Cycle', 'Lending standards & spreads',
+    cycles.credit?.phase || '—',
+    `HY Spread: ${cycles.credit?.hy_spread || '—'}% (avg ${cycles.credit?.hy_spread_avg || '—'}%)`,
+    cycles.credit?.position_pct || 0, '#F97316'
+  );
+  grid.appendChild(creditCard);
+
+  // Commodity Super-Cycle
+  const commCard = makeSimpleCycleCard(
+    'Commodity Super-Cycle', 'CRB Index trend',
+    cycles.commodity?.phase || '—',
+    `CRB Index: ${cycles.commodity?.crb_index || '—'} | YTD: ${cycles.commodity?.crb_change_ytd > 0 ? '+' : ''}${cycles.commodity?.crb_change_ytd || 0}%`,
+    cycles.commodity?.position_pct || 0, '#C9A84C'
+  );
+  grid.appendChild(commCard);
+
+  // Real Estate Cycle
+  const reCard = makeSimpleCycleCard(
+    'Real Estate Cycle', '~18-year Harrison cycle',
+    cycles.real_estate?.phase || '—',
+    `Case-Shiller YoY: +${cycles.real_estate?.case_shiller_yoy || '—'}%`,
+    cycles.real_estate?.position_pct || 0, '#34D399'
+  );
+  grid.appendChild(reCard);
+
+  // Earnings Cycle
+  const earnCard = makeSimpleCycleCard(
+    'Earnings Cycle', 'S&P 500 EPS momentum',
+    cycles.earnings?.phase || '—',
+    `Fwd EPS growth: +${cycles.earnings?.sp500_eps_growth_fwd || '—'}% | Revision ratio: ${cycles.earnings?.revision_ratio || '—'}`,
+    cycles.earnings?.position_pct || 0, '#38BDF8'
+  );
+  grid.appendChild(earnCard);
+
+  // Fed Rate Cycle
+  const fedCard = document.createElement('div');
+  fedCard.className = 'cycle-card';
+  const fed = cycles.fed_rate || {};
+  const fedPct = fed.position_pct || 50;
+  fedCard.innerHTML = `
+    <div class="cycle-card-title">Fed Rate Cycle</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">Hiking / Pause / Cutting</div>
+    <div class="cycle-card-phase" style="color:#F87171">${fed.phase || '—'}</div>
+    <div class="cycle-card-desc">
+      Rate: ${fed.current_rate || '—'}% | Peak: ${fed.cycle_peak || '—'}% | Est. trough: ${fed.cycle_trough_est || '—'}%<br/>
+      Cuts delivered: ${fed.cuts_delivered || 0} | Remaining est.: ${fed.cuts_remaining_est || '—'}
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Hike cycle peak</span><span>Est. trough</span></div>
+      <div class="progress-bar" style="position:relative">
+        <div class="progress-fill" style="width:${fedPct}%;background:linear-gradient(90deg,#F87171,#A78BFA)"></div>
+      </div>
+    </div>`;
+  grid.appendChild(fedCard);
+
+  // Seasonal Card
+  const seasonal = cycles.seasonal || {};
+  const seasonCard = document.createElement('div');
+  seasonCard.className = 'cycle-card';
+  const monthlyData = seasonal.monthly_avg_returns || {};
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const maxAbs = Math.max(...Object.values(monthlyData).map(Math.abs), 0.1);
+  const monthCells = months.map(m => {
+    const v = monthlyData[m] || 0;
+    const h = Math.round((Math.abs(v) / maxAbs) * 24) + 4;
+    const col = v >= 0 ? 'rgba(52,211,153,0.5)' : 'rgba(248,113,113,0.5)';
+    const activeBorder = m === seasonal.current_month_name ? 'border:1px solid var(--gold);' : '';
+    return `<div style="text-align:center;${activeBorder}padding:2px 1px">
+      <div style="font-size:8px;color:var(--muted)">${m}</div>
+      <div style="height:${h}px;background:${m === seasonal.current_month_name ? 'var(--gold)' : col};margin:2px auto;width:80%;border-radius:1px 1px 0 0"></div>
+      <div style="font-size:8px;color:${v>=0?'var(--green)':'var(--red)'}">${v>0?'+':''}${v}%</div>
+    </div>`;
+  }).join('');
+  seasonCard.innerHTML = `
+    <div class="cycle-card-title">Seasonal Cycle</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">S&P 500 monthly avg returns</div>
+    <div class="cycle-card-phase" style="color:var(--gold)">${seasonal.current_month_name || '—'}</div>
+    <div class="cycle-card-desc">Hist. avg this month: <strong style="color:var(--gold2)">${seasonal.sp500_avg_return_current_month >= 0 ? '+' : ''}${seasonal.sp500_avg_return_current_month || 0}%</strong></div>
+    <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:6px">${monthCells}</div>`;
+  grid.appendChild(seasonCard);
+
+  // Decennial Card
+  const dec = cycles.decennial || {};
+  const decCard = document.createElement('div');
+  decCard.className = 'cycle-card';
+  const decData = dec.historical_data || {};
+  const decMaxAbs = Math.max(...Object.values(decData).map(Math.abs), 0.1);
+  const decBars = ['0','1','2','3','4','5','6','7','8','9'].map(d => {
+    const v = decData[d] || 0;
+    const h = Math.round((Math.abs(v) / decMaxAbs) * 40) + 4;
+    const isActive = String(dec.current_year_digit) === d;
+    const col = isActive ? 'var(--gold)' : v >= 0 ? 'rgba(52,211,153,0.35)' : 'rgba(248,113,113,0.35)';
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+      <div style="font-size:8px;color:${v>=0?'var(--green)':'var(--red)'}">${v>0?'+':''}${v}%</div>
+      <div style="width:100%;height:${h}px;background:${col};border-radius:1px 1px 0 0"></div>
+      <div style="font-size:9px;color:${isActive?'var(--gold)':'var(--muted)'}">${isActive?'→':''} '${d}</div>
+    </div>`;
+  }).join('');
+  decCard.innerHTML = `
+    <div class="cycle-card-title">Decennial Pattern</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">S&P 500 by year-end digit</div>
+    <div class="cycle-card-phase" style="color:var(--gold)">'${dec.current_year_digit || '—'} Year</div>
+    <div class="cycle-card-desc">Hist. avg return: <strong style="color:var(--gold2)">+${dec.sp500_avg_return_year6 || '—'}%</strong></div>
+    <div style="display:flex;gap:3px;align-items:flex-end;height:70px;margin-top:6px">${decBars}</div>`;
+  grid.appendChild(decCard);
+}
+
+function makeSimpleCycleCard(title, subtitle, phase, desc, position, color) {
+  const card = document.createElement('div');
+  card.className = 'cycle-card';
+  card.innerHTML = `
+    <div class="cycle-card-title">${title}</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">${subtitle}</div>
+    <div class="cycle-card-phase" style="color:${color}">${phase}</div>
+    <div class="cycle-card-desc">${desc}</div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Cycle start</span><span>${position}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${position}%;background:${color}"></div></div>
+    </div>`;
+  return card;
+}
+
+// ── Presidential Cycle ───────────────────────────────────────────
+
+function renderPresidentialCycle() {
+  const pres = ALL_DATA.cycles?.presidential || {};
+  const card = document.getElementById('presidential-card');
+  const avgs = pres.sp500_historical_avg || {};
+  const currentYear = pres.current_year_in_term || 1;
+  const ytd = pres.sp500_current_ytd || 0;
+  const maxAvg = Math.max(...Object.values(avgs));
+
+  const bars = [1,2,3,4].map(y => {
+    const avg = avgs[`year${y}`] || 0;
+    const isActive = y === currentYear;
+    const h = Math.round((avg / maxAvg) * 60) + 8;
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+      <div style="font-size:10px;color:${isActive?'var(--gold2)':'var(--muted)'}">+${avg}%</div>
+      <div style="width:80%;height:${h}px;background:${isActive?'var(--gold)':'rgba(255,255,255,0.08)'};border-radius:1px 1px 0 0;${isActive?'box-shadow:0 0 12px rgba(201,168,76,0.4)':''}"></div>
+      <div style="font-size:9px;color:${isActive?'var(--gold)':'var(--muted)'}">Year ${y}${isActive?' ◀':''}</div>
+    </div>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Historical S&P 500 Avg by Year of Term</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;margin-bottom:4px">
+          ${pres.current_president || '—'} · Year <span style="color:var(--gold)">${currentYear}</span> of 4
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:16px">Term ${pres.term_start_year}–${pres.term_end_year}</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;height:90px">${bars}</div>
+      </div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Current Year Performance</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:600;color:${ytd>=0?'var(--green)':'var(--red)'}">
+          ${ytd>=0?'+':''}${ytd}%
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:16px">S&P 500 YTD</div>
+        <div style="font-size:10px;color:var(--muted)">Historical avg Year ${currentYear}: <span style="color:var(--gold2)">+${avgs[`year${currentYear}`] || '—'}%</span></div>
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:4px"><span>vs. historical expectation</span><span>${Math.round((ytd / (avgs[`year${currentYear}`] || 1)) * 100)}%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,Math.max(0,Math.round((ytd / (avgs[`year${currentYear}`] || 1)) * 100)))}%;background:var(--gold)"></div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
+function formatVal(v, unit) {
+  if (v === null || v === undefined) return '—';
+  const n = Number(v);
+  if (unit === '#') return n.toLocaleString();
+  if (unit === 'K') return n >= 1000 ? (n/1000).toFixed(1) + 'M' : n.toLocaleString() + 'K';
+  if (unit === 'B$') return '$' + n.toFixed(0) + 'B';
+  if (unit === '%') return n.toFixed(2) + '%';
+  if (unit === '$') return '$' + n.toLocaleString();
+  return n.toFixed(2) + (unit && unit !== 'idx' && unit !== 'pts' ? ' ' + unit : '');
+}
+
+function formatDate(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch { return iso; }
+}
+
+const PHASE_CONFIG = {
+  trough:          { label: 'Trough',          color: '#6366F1', description: 'Economic bottom. Credit conditions tight. Leading indicators turning up.' },
+  early_expansion: { label: 'Early Expansion',  color: '#38BDF8', description: 'Recovery gaining momentum. PMIs rising, employment stabilizing.' },
+  expansion:       { label: 'Expansion',        color: '#34D399', description: 'Broad-based growth. Corporate profits rising, unemployment falling.' },
+  overheating:     { label: 'Overheating',      color: '#FBBF24', description: 'Growth above potential. Inflation picking up, central bank may tighten.' },
+  peak:            { label: 'Peak',             color: '#F97316', description: 'Maximum growth rate. Leading indicators plateauing. Rate cuts priced out.' },
+  recession:       { label: 'Recession',        color: '#F87171', description: 'Contraction underway. Unemployment rising, credit tightening.' },
+  late_recession:  { label: 'Late Recession',   color: '#A78BFA', description: 'Deepest phase. Lagging indicators still weak. Policy easing in progress.' },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════════════════════════
+
+document.getElementById('region-bar').addEventListener('click', e => {
+  const btn = e.target.closest('.region-btn');
+  if (!btn) return;
+  document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRegion = btn.dataset.region;
+  if (ALL_DATA) render(currentRegion);
+});
+
+window.addEventListener('resize', () => {
+  if (ALL_DATA) {
+    const rd = ALL_DATA.regions[currentRegion];
+    if (rd) renderSinusoid(rd.cycle_angle_deg || 90, rd.cycle_phase || 'expansion');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// FALLBACK DATA (used if indicators.json is not yet present)
+// ═══════════════════════════════════════════════════════════════════
+
+const FALLBACK_DATA = {
+  meta: { last_updated: new Date().toISOString(), version: "1.0" },
+  regions: {
+    US: {
+      cycle_score: 0.42, cycle_angle_deg: 105, cycle_phase: "overheating",
+      indicators: {
+        leading: [
+          { id:"T10Y2Y",       name:"Yield Curve 10Y-2Y",              value:0.21,   previous:0.18,   date:"2026-03-10", unit:"%",   source:"FRED",     category:"leading" },
+          { id:"UMCSENT",      name:"Consumer Sentiment (Univ. Mich.)", value:64.7,   previous:67.8,   date:"2026-03-01", unit:"idx", source:"FRED",     category:"leading" },
+          { id:"ICSA",         name:"Initial Jobless Claims",           value:218000, previous:222000, date:"2026-03-07", unit:"#",   source:"FRED",     category:"leading" },
+          { id:"M2SL",         name:"M2 Money Supply",                  value:21450,  previous:21380,  date:"2026-02-01", unit:"B$",  source:"FRED",     category:"leading" },
+          { id:"PERMIT",       name:"Building Permits",                 value:1480,   previous:1510,   date:"2026-02-01", unit:"K",   source:"FRED",     category:"leading" },
+          { id:"NEWORDER",     name:"Mfg. New Orders",                  value:582.4,  previous:578.1,  date:"2026-02-01", unit:"B$",  source:"FRED",     category:"leading" },
+          { id:"BAMLH0A0HYM2", name:"HY Credit Spread (OAS)",           value:3.45,   previous:3.62,   date:"2026-03-10", unit:"%",   source:"FRED",     category:"leading" },
+          { id:"MICH",         name:"Inflation Expectations (1Y)",      value:3.1,    previous:3.3,    date:"2026-03-01", unit:"%",   source:"FRED",     category:"leading" },
+          { id:"DTWEXBGS",     name:"USD Trade-Weighted Index",         value:121.4,  previous:120.8,  date:"2026-03-10", unit:"idx", source:"FRED",     category:"leading" },
+          { id:"ACOGNO",       name:"New Orders Non-Defense Cap Goods", value:74.8,   previous:73.2,   date:"2026-02-01", unit:"B$",  source:"FRED",     category:"leading" },
+          { id:"VIX",          name:"VIX Volatility Index",             value:18.4,   previous:21.2,   date:"2026-03-10", unit:"pts", source:"yFinance", category:"leading" },
+          { id:"DXY",          name:"US Dollar Index (DXY)",            value:104.2,  previous:103.8,  date:"2026-03-10", unit:"idx", source:"yFinance", category:"leading" },
+          { id:"GOLD",         name:"Gold (USD/oz)",                    value:2918,   previous:2870,   date:"2026-03-10", unit:"$",   source:"yFinance", category:"leading" },
+        ],
+        coincident: [
+          { id:"INDPRO",       name:"Industrial Production",            value:103.8,  previous:103.2,  date:"2026-02-15", unit:"idx", source:"FRED",     category:"coincident" },
+          { id:"PAYEMS",       name:"Nonfarm Payrolls",                 value:159840, previous:159620, date:"2026-03-07", unit:"K",   source:"FRED",     category:"coincident" },
+          { id:"RSXFS",        name:"Retail Sales ex-Food",             value:548.2,  previous:542.8,  date:"2026-02-17", unit:"B$",  source:"FRED",     category:"coincident" },
+          { id:"PI",           name:"Personal Income",                  value:23840,  previous:23710,  date:"2026-02-28", unit:"B$",  source:"FRED",     category:"coincident" },
+          { id:"TCU",          name:"Capacity Utilization",             value:77.8,   previous:77.4,   date:"2026-02-15", unit:"%",   source:"FRED",     category:"coincident" },
+          { id:"SP500",        name:"S&P 500",                          value:5820,   previous:5780,   date:"2026-03-10", unit:"pts", source:"yFinance", category:"coincident" },
+          { id:"OIL_WTI",      name:"WTI Crude Oil",                    value:68.4,   previous:70.1,   date:"2026-03-10", unit:"$",   source:"yFinance", category:"coincident" },
+        ],
+        lagging: [
+          { id:"CPIAUCSL",     name:"CPI (YoY)",                        value:3.2,    previous:3.4,    date:"2026-03-12", unit:"%",   source:"FRED",     category:"lagging" },
+          { id:"CPILFESL",     name:"Core CPI (YoY)",                   value:3.0,    previous:3.1,    date:"2026-03-12", unit:"%",   source:"FRED",     category:"lagging" },
+          { id:"UNRATE",       name:"Unemployment Rate",                 value:4.1,    previous:4.0,    date:"2026-03-07", unit:"%",   source:"FRED",     category:"lagging" },
+          { id:"FEDFUNDS",     name:"Fed Funds Rate",                   value:4.25,   previous:4.25,   date:"2026-03-10", unit:"%",   source:"FRED",     category:"lagging" },
+          { id:"TOTCI",        name:"C&I Loans",                        value:2840,   previous:2820,   date:"2026-03-04", unit:"B$",  source:"FRED",     category:"lagging" },
+          { id:"MPRIME",       name:"Prime Rate",                       value:7.50,   previous:7.50,   date:"2026-03-10", unit:"%",   source:"FRED",     category:"lagging" },
+          { id:"US10Y",        name:"US 10Y Treasury Yield",            value:4.32,   previous:4.28,   date:"2026-03-10", unit:"%",   source:"yFinance", category:"lagging" },
+        ]
+      }
+    },
+    EU: {
+      cycle_score: 0.05, cycle_angle_deg: 82, cycle_phase: "expansion",
+      indicators: {
+        leading: [
+          { id:"EU_PMI_MFG",   name:"PMI Manufacturing (Composite)",    value:47.6,   previous:46.9,   date:"2026-03-03", unit:"idx", source:"OECD",     category:"leading" },
+          { id:"EU_PMI_SVC",   name:"PMI Services (Composite)",         value:51.1,   previous:50.4,   date:"2026-03-05", unit:"idx", source:"OECD",     category:"leading" },
+          { id:"EU_CONS_CONF", name:"Consumer Confidence",              value:-13.2,  previous:-14.1,  date:"2026-02-28", unit:"pts", source:"Eurostat", category:"leading" },
+          { id:"EU_BCI",       name:"Business Climate Indicator",       value:0.12,   previous:0.04,   date:"2026-03-01", unit:"pts", source:"Eurostat", category:"leading" },
+          { id:"EU_ESI",       name:"Economic Sentiment Indicator",     value:96.4,   previous:95.8,   date:"2026-03-01", unit:"idx", source:"Eurostat", category:"leading" },
+        ],
+        coincident: [
+          { id:"EU_IP",        name:"Industrial Production (YoY)",      value:1.2,    previous:0.8,    date:"2026-02-13", unit:"%",   source:"Eurostat", category:"coincident" },
+          { id:"EU_RETAIL",    name:"Retail Sales (YoY)",               value:0.4,    previous:-0.1,   date:"2026-03-05", unit:"%",   source:"Eurostat", category:"coincident" },
+          { id:"EU_GDP",       name:"GDP Growth (QoQ)",                 value:0.3,    previous:0.2,    date:"2026-01-30", unit:"%",   source:"Eurostat", category:"coincident" },
+        ],
+        lagging: [
+          { id:"EU_CPI",       name:"HICP Inflation (YoY)",             value:2.3,    previous:2.5,    date:"2026-03-01", unit:"%",   source:"Eurostat", category:"lagging" },
+          { id:"EU_UNEMP",     name:"Unemployment Rate",                value:5.9,    previous:6.0,    date:"2026-03-01", unit:"%",   source:"Eurostat", category:"lagging" },
+          { id:"EU_ECB_RATE",  name:"ECB Deposit Rate",                 value:2.25,   previous:2.50,   date:"2026-03-06", unit:"%",   source:"ECB",      category:"lagging" },
+        ]
+      }
+    },
+    CN: {
+      cycle_score: -0.15, cycle_angle_deg: 62, cycle_phase: "early_expansion",
+      indicators: {
+        leading: [
+          { id:"CN_PMI_MFG",   name:"NBS PMI Manufacturing",            value:50.2,   previous:49.8,   date:"2026-02-28", unit:"idx", source:"NBS",      category:"leading" },
+          { id:"CN_PMI_SVC",   name:"NBS PMI Services",                 value:51.4,   previous:50.9,   date:"2026-02-28", unit:"idx", source:"NBS",      category:"leading" },
+          { id:"CN_M2",        name:"M2 Money Supply (YoY)",            value:7.8,    previous:7.3,    date:"2026-02-14", unit:"%",   source:"PBoC",     category:"leading" },
+        ],
+        coincident: [
+          { id:"CN_IP",        name:"Industrial Production (YoY)",      value:5.6,    previous:5.2,    date:"2026-02-15", unit:"%",   source:"NBS",      category:"coincident" },
+          { id:"CN_RETAIL",    name:"Retail Sales (YoY)",               value:3.8,    previous:3.2,    date:"2026-02-15", unit:"%",   source:"NBS",      category:"coincident" },
+          { id:"CN_GDP",       name:"GDP Growth (YoY)",                 value:5.0,    previous:4.9,    date:"2026-01-20", unit:"%",   source:"NBS",      category:"coincident" },
+        ],
+        lagging: [
+          { id:"CN_CPI",       name:"CPI (YoY)",                        value:0.5,    previous:0.2,    date:"2026-03-10", unit:"%",   source:"NBS",      category:"lagging" },
+          { id:"CN_UNEMP",     name:"Urban Unemployment Rate",          value:5.1,    previous:5.2,    date:"2026-02-20", unit:"%",   source:"NBS",      category:"lagging" },
+          { id:"CN_PBOC_RATE", name:"PBoC 1Y Loan Prime Rate",          value:3.10,   previous:3.10,   date:"2026-02-20", unit:"%",   source:"PBoC",     category:"lagging" },
+        ]
+      }
+    },
+    JP: {
+      cycle_score: 0.18, cycle_angle_deg: 91, cycle_phase: "expansion",
+      indicators: {
+        leading: [
+          { id:"JP_PMI_MFG",   name:"Jibun Bank PMI Manufacturing",     value:49.3,   previous:48.8,   date:"2026-03-03", unit:"idx", source:"Jibun",    category:"leading" },
+          { id:"JP_PMI_SVC",   name:"Jibun Bank PMI Services",          value:53.7,   previous:52.9,   date:"2026-03-05", unit:"idx", source:"Jibun",    category:"leading" },
+          { id:"JP_MACHINE",   name:"Machine Orders (YoY)",             value:2.4,    previous:1.8,    date:"2026-02-12", unit:"%",   source:"Cabinet",  category:"leading" },
+        ],
+        coincident: [
+          { id:"JP_IP",        name:"Industrial Production (YoY)",      value:1.8,    previous:1.2,    date:"2026-02-28", unit:"%",   source:"METI",     category:"coincident" },
+          { id:"JP_RETAIL",    name:"Retail Sales (YoY)",               value:3.9,    previous:3.5,    date:"2026-03-03", unit:"%",   source:"METI",     category:"coincident" },
+          { id:"JP_GDP",       name:"GDP Growth (QoQ)",                 value:0.4,    previous:0.2,    date:"2026-02-17", unit:"%",   source:"Cabinet",  category:"coincident" },
+        ],
+        lagging: [
+          { id:"JP_CPI",       name:"CPI (YoY)",                        value:3.1,    previous:3.4,    date:"2026-03-04", unit:"%",   source:"Stats JP", category:"lagging" },
+          { id:"JP_UNEMP",     name:"Unemployment Rate",                value:2.5,    previous:2.4,    date:"2026-03-04", unit:"%",   source:"Stats JP", category:"lagging" },
+          { id:"JP_BOJ_RATE",  name:"BoJ Policy Rate",                  value:0.50,   previous:0.25,   date:"2026-03-10", unit:"%",   source:"BoJ",      category:"lagging" },
+        ]
+      }
+    },
+    UK: {
+      cycle_score: 0.08, cycle_angle_deg: 85, cycle_phase: "expansion",
+      indicators: {
+        leading: [
+          { id:"UK_PMI_MFG",   name:"S&P Global PMI Manufacturing",     value:46.9,   previous:46.2,   date:"2026-03-03", unit:"idx", source:"S&P",      category:"leading" },
+          { id:"UK_PMI_SVC",   name:"S&P Global PMI Services",          value:51.2,   previous:50.8,   date:"2026-03-05", unit:"idx", source:"S&P",      category:"leading" },
+          { id:"UK_CONS_CONF", name:"Consumer Confidence (GfK)",        value:-20,    previous:-22,    date:"2026-02-28", unit:"pts", source:"GfK",      category:"leading" },
+        ],
+        coincident: [
+          { id:"UK_GDP",       name:"GDP Growth (QoQ)",                 value:0.1,    previous:0.0,    date:"2026-02-13", unit:"%",   source:"ONS",      category:"coincident" },
+          { id:"UK_IP",        name:"Industrial Production (YoY)",      value:-0.4,   previous:-0.8,   date:"2026-02-13", unit:"%",   source:"ONS",      category:"coincident" },
+          { id:"UK_RETAIL",    name:"Retail Sales (YoY)",               value:1.0,    previous:0.4,    date:"2026-02-21", unit:"%",   source:"ONS",      category:"coincident" },
+        ],
+        lagging: [
+          { id:"UK_CPI",       name:"CPI (YoY)",                        value:2.8,    previous:3.0,    date:"2026-03-19", unit:"%",   source:"ONS",      category:"lagging" },
+          { id:"UK_UNEMP",     name:"Unemployment Rate",                value:4.4,    previous:4.4,    date:"2026-03-11", unit:"%",   source:"ONS",      category:"lagging" },
+          { id:"UK_BOE_RATE",  name:"BoE Bank Rate",                    value:4.25,   previous:4.50,   date:"2026-02-06", unit:"%",   source:"BoE",      category:"lagging" },
+        ]
+      }
+    },
+  },
+  cycles: {
+    presidential: { current_president:"Trump", term_start_year:2025, term_end_year:2028, current_year_in_term:2, sp500_historical_avg:{year1:6.4,year2:7.0,year3:16.4,year4:6.6}, sp500_current_ytd:3.2 },
+    kondratieff:  { current_season:"Winter",  season_start_year:2000, season_end_year_est:2035, description:"Deflation/debt reset. Characterized by credit contraction, deleveraging, tech disruption.", position_pct:72 },
+    juglar:       { last_trough:2020, cycle_length_avg:9,  current_year_in_cycle:6,  phase:"Late Expansion",   position_pct:66 },
+    kitchin:      { last_trough:2023, cycle_length_avg:4,  current_year_in_cycle:3,  phase:"Inventory Build",  position_pct:75 },
+    kuznets:      { last_trough:2012, cycle_length_avg:18, current_year_in_cycle:14, phase:"Late Expansion",   position_pct:77 },
+    credit:       { phase:"Tightening Plateau", hy_spread:3.45, hy_spread_avg:4.2, position_pct:65 },
+    commodity:    { phase:"Recovery",           crb_index:281.4, crb_change_ytd:4.2, position_pct:42 },
+    real_estate:  { phase:"Late Cycle",         case_shiller_yoy:3.8, position_pct:77 },
+    earnings:     { phase:"Expansion",          sp500_eps_growth_fwd:11.4, revision_ratio:1.12, position_pct:62 },
+    seasonal:     { current_month:3, current_month_name:"March", sp500_avg_return_current_month:1.2, monthly_avg_returns:{Jan:1.1,Feb:0.1,Mar:1.2,Apr:1.5,May:0.2,Jun:0.6,Jul:1.8,Aug:0.1,Sep:-0.8,Oct:0.9,Nov:1.7,Dec:1.5} },
+    decennial:    { current_year_digit:6, sp500_avg_return_year6:8.1, historical_data:{"0":-2.1,"1":14.8,"2":-5.1,"3":24.1,"4":12.4,"5":28.6,"6":8.1,"7":16.2,"8":3.8,"9":15.4} },
+    fed_rate:     { phase:"Cutting", current_rate:4.25, cycle_peak:5.50, cycle_trough_est:3.00, cuts_delivered:5, cuts_remaining_est:5, position_pct:50 },
+  }
+};
+
+// ── Boot ─────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
