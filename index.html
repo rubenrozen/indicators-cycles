@@ -1018,7 +1018,9 @@ const FALLBACK_DATA = {
   meta: { last_updated: new Date().toISOString(), version: "1.0" },
   regions: {
     US: {
-      cycle_score: 0.42, cycle_angle_deg: 105, cycle_phase: "overheating",
+      // 152° = Overheating: CPI 3.2%, Fed still at 4.25%, payrolls strong,
+      // 3 major cycles (Juglar/Kitchin/Kuznets) all in late stage
+      cycle_score: 0.42, cycle_angle_deg: 152, cycle_phase: "overheating",
       indicators: {
         leading: [
           { id:"T10Y2Y",       name:"Yield Curve 10Y-2Y",              value:0.21,   previous:0.18,   date:"2026-03-10", unit:"%",   source:"FRED",     category:"leading" },
@@ -1056,7 +1058,9 @@ const FALLBACK_DATA = {
       }
     },
     EU: {
-      cycle_score: 0.05, cycle_angle_deg: 82, cycle_phase: "expansion",
+      // 68° = Early Expansion: PMI Mfg 47.6 (below 50), ECB cutting (2.25%),
+      // inflation falling (2.3%), recovery underway but fragile
+      cycle_score: 0.05, cycle_angle_deg: 68, cycle_phase: "early_expansion",
       indicators: {
         leading: [
           { id:"EU_PMI_MFG",   name:"PMI Manufacturing (Composite)",    value:47.6,   previous:46.9,   date:"2026-03-03", unit:"idx", source:"OECD",     category:"leading" },
@@ -1078,7 +1082,9 @@ const FALLBACK_DATA = {
       }
     },
     CN: {
-      cycle_score: -0.15, cycle_angle_deg: 62, cycle_phase: "early_expansion",
+      // 72° = Early Expansion: PMI just above 50, stimulus working,
+      // but CPI at 0.5% (near deflation), property sector still stressed
+      cycle_score: -0.15, cycle_angle_deg: 72, cycle_phase: "early_expansion",
       indicators: {
         leading: [
           { id:"CN_PMI_MFG",   name:"NBS PMI Manufacturing",            value:50.2,   previous:49.8,   date:"2026-02-28", unit:"idx", source:"NBS",      category:"leading" },
@@ -1098,7 +1104,9 @@ const FALLBACK_DATA = {
       }
     },
     JP: {
-      cycle_score: 0.18, cycle_angle_deg: 91, cycle_phase: "expansion",
+      // 98° = Expansion: BoJ hiking (0.5%), CPI at 3.1% (first real inflation
+      // in 30 years), wage growth positive — Japan finally in expansion
+      cycle_score: 0.18, cycle_angle_deg: 98, cycle_phase: "expansion",
       indicators: {
         leading: [
           { id:"JP_PMI_MFG",   name:"Jibun Bank PMI Manufacturing",     value:49.3,   previous:48.8,   date:"2026-03-03", unit:"idx", source:"Jibun",    category:"leading" },
@@ -1118,7 +1126,9 @@ const FALLBACK_DATA = {
       }
     },
     UK: {
-      cycle_score: 0.08, cycle_angle_deg: 85, cycle_phase: "expansion",
+      // 52° = Early Expansion border: GDP at 0.1% QoQ (stagnation),
+      // PMI Mfg 46.9 (contraction), BoE cutting (4.25%), UK weakest of G7
+      cycle_score: 0.08, cycle_angle_deg: 52, cycle_phase: "early_expansion",
       indicators: {
         leading: [
           { id:"UK_PMI_MFG",   name:"S&P Global PMI Manufacturing",     value:46.9,   previous:46.2,   date:"2026-03-03", unit:"idx", source:"S&P",      category:"leading" },
