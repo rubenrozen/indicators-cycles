@@ -531,6 +531,13 @@ function renderSinusoid(angleDeg, phase) {
   ];
   gradStops.forEach(([stop, color]) => grad.addColorStop(stop, color));
 
+  // SINE_OFFSET shifts the curve so:
+  //   visual maximum (top) aligns with "Peak"     zone centre (202.5° = 56.25% of canvas)
+  //   visual minimum (bottom) aligns with "Trough" zone centre (22.5°  = 6.25%  of canvas)
+  // Derivation: we want sin(t + OFFSET) = 1 at t = (202.5/360)*2π
+  //   → OFFSET = π/2 − (202.5/360)*2π = π/2 − 9π/8 = −5π/8
+  const SINE_OFFSET = -5 * Math.PI / 8;
+
   // Shadow/glow pass
   ctx.shadowColor = 'rgba(201,168,76,0.4)';
   ctx.shadowBlur  = 12;
@@ -539,7 +546,7 @@ function renderSinusoid(angleDeg, phase) {
   ctx.beginPath();
   for (let px = 0; px <= cw; px++) {
     const t = (px / cw) * Math.PI * 2;
-    const y = cy - Math.sin(t) * amp;
+    const y = cy - Math.sin(t + SINE_OFFSET) * amp;
     if (px === 0) ctx.moveTo(PAD + px, y); else ctx.lineTo(PAD + px, y);
   }
   ctx.stroke();
@@ -548,7 +555,7 @@ function renderSinusoid(angleDeg, phase) {
   // ── Current position dot ──
   const angleRad = (angleDeg / 360) * Math.PI * 2;
   const dotX = PAD + (angleDeg / 360) * cw;
-  const dotY = cy - Math.sin(angleRad) * amp;
+  const dotY = cy - Math.sin(angleRad + SINE_OFFSET) * amp;
   const phaseInfo = PHASE_CONFIG[phase] || PHASE_CONFIG['expansion'];
 
   // Pulse ring
