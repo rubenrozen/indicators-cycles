@@ -441,11 +441,14 @@ function render(region) {
   document.getElementById('last-updated-text').textContent =
     meta.last_updated ? 'Updated ' + formatDate(meta.last_updated) : 'Live data';
 
+  // Derive phase from angle — single source of truth
+  const derivedPhase = angleToPhase(regionData.cycle_angle_deg || 90);
+
   // Sinusoid
-  renderSinusoid(regionData.cycle_angle_deg || 90, regionData.cycle_phase || 'expansion');
+  renderSinusoid(regionData.cycle_angle_deg || 90, derivedPhase);
 
   // Phase badge
-  const phaseInfo = PHASE_CONFIG[regionData.cycle_phase] || PHASE_CONFIG['expansion'];
+  const phaseInfo = PHASE_CONFIG[derivedPhase] || PHASE_CONFIG['expansion'];
   const badge = document.getElementById('phase-badge');
   badge.textContent = phaseInfo.label;
   badge.style.color = phaseInfo.color;
@@ -610,40 +613,41 @@ function renderLongCycles() {
 
   const longCycles = [
     {
-      title: 'Kondratieff Wave',
-      subtitle: '~50–60 year super-cycle',
+      title: 'Kondratieff Wave', subtitle: '~50–60 year super-cycle',
       phase: cycles.kondratieff?.current_season || '—',
       desc: cycles.kondratieff?.description || '',
       position: cycles.kondratieff?.position_pct || 0,
       color: '#A78BFA',
+      sentKey: 'kondratieff', sentPhase: cycles.kondratieff?.current_season,
     },
     {
-      title: 'Juglar Cycle',
-      subtitle: '~7–11 year investment cycle',
+      title: 'Juglar Cycle', subtitle: '~7–11 year investment cycle',
       phase: cycles.juglar?.phase || '—',
       desc: `Year ${cycles.juglar?.current_year_in_cycle || '?'} of ~${cycles.juglar?.cycle_length_avg || 9}. Last trough: ${cycles.juglar?.last_trough || '?'}`,
       position: cycles.juglar?.position_pct || 0,
       color: '#38BDF8',
+      sentKey: 'juglar', sentPhase: cycles.juglar?.phase,
     },
     {
-      title: 'Kitchin Cycle',
-      subtitle: '~3–5 year inventory cycle',
+      title: 'Kitchin Cycle', subtitle: '~3–5 year inventory cycle',
       phase: cycles.kitchin?.phase || '—',
       desc: `Year ${cycles.kitchin?.current_year_in_cycle || '?'} of ~${cycles.kitchin?.cycle_length_avg || 4}. Last trough: ${cycles.kitchin?.last_trough || '?'}`,
       position: cycles.kitchin?.position_pct || 0,
       color: '#34D399',
+      sentKey: 'kitchin', sentPhase: cycles.kitchin?.phase,
     },
     {
-      title: 'Kuznets Cycle',
-      subtitle: '~15–25 year real estate cycle',
+      title: 'Kuznets Cycle', subtitle: '~15–25 year real estate cycle',
       phase: cycles.kuznets?.phase || '—',
       desc: `Year ${cycles.kuznets?.current_year_in_cycle || '?'} of ~${cycles.kuznets?.cycle_length_avg || 18}. Last trough: ${cycles.kuznets?.last_trough || '?'}`,
       position: cycles.kuznets?.position_pct || 0,
       color: '#FBBF24',
+      sentKey: 'kuznets', sentPhase: cycles.kuznets?.phase,
     },
   ];
 
   longCycles.forEach(c => {
+    const sent = (CYCLE_SENTIMENT[c.sentKey] || {})[c.sentPhase] || null;
     const card = document.createElement('div');
     card.className = 'cycle-card';
     card.innerHTML = `
@@ -654,7 +658,8 @@ function renderLongCycles() {
       <div class="progress-wrap">
         <div class="progress-label"><span>Cycle start</span><span>${c.position}%</span></div>
         <div class="progress-bar"><div class="progress-fill" style="width:${c.position}%;background:${c.color}"></div></div>
-      </div>`;
+      </div>
+      ${sent ? sentimentBadge(sent.s, sent.label, sent.tf) + `<div style="font-size:9px;color:var(--muted);margin-top:4px;font-style:italic">${sent.note}</div>` : ''}`;
     grid.appendChild(card);
   });
 }
@@ -671,7 +676,8 @@ function renderMarketCycles() {
     'Credit Cycle', 'Lending standards & spreads',
     cycles.credit?.phase || '—',
     `HY Spread: ${cycles.credit?.hy_spread || '—'}% (avg ${cycles.credit?.hy_spread_avg || '—'}%)`,
-    cycles.credit?.position_pct || 0, '#F97316'
+    cycles.credit?.position_pct || 0, '#F97316',
+    'credit', cycles.credit?.phase
   );
   grid.appendChild(creditCard);
 
@@ -680,7 +686,8 @@ function renderMarketCycles() {
     'Commodity Super-Cycle', 'CRB Index trend',
     cycles.commodity?.phase || '—',
     `CRB Index: ${cycles.commodity?.crb_index || '—'} | YTD: ${cycles.commodity?.crb_change_ytd > 0 ? '+' : ''}${cycles.commodity?.crb_change_ytd || 0}%`,
-    cycles.commodity?.position_pct || 0, '#C9A84C'
+    cycles.commodity?.position_pct || 0, '#C9A84C',
+    'commodity', cycles.commodity?.phase
   );
   grid.appendChild(commCard);
 
@@ -689,7 +696,8 @@ function renderMarketCycles() {
     'Real Estate Cycle', '~18-year Harrison cycle',
     cycles.real_estate?.phase || '—',
     `Case-Shiller YoY: +${cycles.real_estate?.case_shiller_yoy || '—'}%`,
-    cycles.real_estate?.position_pct || 0, '#34D399'
+    cycles.real_estate?.position_pct || 0, '#34D399',
+    'real_estate', cycles.real_estate?.phase
   );
   grid.appendChild(reCard);
 
@@ -698,7 +706,8 @@ function renderMarketCycles() {
     'Earnings Cycle', 'S&P 500 EPS momentum',
     cycles.earnings?.phase || '—',
     `Fwd EPS growth: +${cycles.earnings?.sp500_eps_growth_fwd || '—'}% | Revision ratio: ${cycles.earnings?.revision_ratio || '—'}`,
-    cycles.earnings?.position_pct || 0, '#38BDF8'
+    cycles.earnings?.position_pct || 0, '#38BDF8',
+    'earnings', cycles.earnings?.phase
   );
   grid.appendChild(earnCard);
 
@@ -707,6 +716,7 @@ function renderMarketCycles() {
   fedCard.className = 'cycle-card';
   const fed = cycles.fed_rate || {};
   const fedPct = fed.position_pct || 50;
+  const fedSent = (CYCLE_SENTIMENT.fed_rate || {})[fed.phase] || null;
   fedCard.innerHTML = `
     <div class="cycle-card-title">Fed Rate Cycle</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">Hiking / Pause / Cutting</div>
@@ -720,7 +730,8 @@ function renderMarketCycles() {
       <div class="progress-bar" style="position:relative">
         <div class="progress-fill" style="width:${fedPct}%;background:linear-gradient(90deg,#F87171,#A78BFA)"></div>
       </div>
-    </div>`;
+    </div>
+    ${fedSent ? sentimentBadge(fedSent.s, fedSent.label, fedSent.tf) + `<div style="font-size:9px;color:var(--muted);margin-top:4px;font-style:italic">${fedSent.note}</div>` : ''}`;
   grid.appendChild(fedCard);
 
   // Seasonal Card
@@ -741,12 +752,17 @@ function renderMarketCycles() {
       <div style="font-size:8px;color:${v>=0?'var(--green)':'var(--red)'}">${v>0?'+':''}${v}%</div>
     </div>`;
   }).join('');
+  const seasonAvg = seasonal.sp500_avg_return_current_month || 0;
+  const seasonSentKey = seasonAvg >= 1 ? 'positive' : seasonAvg <= -0.3 ? 'negative' : 'neutral';
+  const seasonSent = CYCLE_SENTIMENT.seasonal[seasonSentKey];
   seasonCard.innerHTML = `
     <div class="cycle-card-title">Seasonal Cycle</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">S&P 500 monthly avg returns</div>
     <div class="cycle-card-phase" style="color:var(--gold)">${seasonal.current_month_name || '—'}</div>
-    <div class="cycle-card-desc">Hist. avg this month: <strong style="color:var(--gold2)">${seasonal.sp500_avg_return_current_month >= 0 ? '+' : ''}${seasonal.sp500_avg_return_current_month || 0}%</strong></div>
-    <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:6px">${monthCells}</div>`;
+    <div class="cycle-card-desc">Hist. avg this month: <strong style="color:var(--gold2)">${seasonAvg >= 0 ? '+' : ''}${seasonAvg}%</strong></div>
+    <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:6px">${monthCells}</div>
+    ${sentimentBadge(seasonSent.s, seasonSent.label, seasonSent.tf)}
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;font-style:italic">${seasonSent.note}</div>`;
   grid.appendChild(seasonCard);
 
   // Decennial Card
@@ -766,16 +782,22 @@ function renderMarketCycles() {
       <div style="font-size:9px;color:${isActive?'var(--gold)':'var(--muted)'}">${isActive?'→':''} '${d}</div>
     </div>`;
   }).join('');
+  const decAvgReturn = decData[String(dec.current_year_digit)] || 0;
+  const decSentKey = decAvgReturn >= 15 ? 'strong' : decAvgReturn >= 5 ? 'average' : decAvgReturn >= 0 ? 'weak' : 'negative';
+  const decSent = CYCLE_SENTIMENT.decennial[decSentKey];
   decCard.innerHTML = `
     <div class="cycle-card-title">Decennial Pattern</div>
     <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:0.08em">S&P 500 by year-end digit</div>
     <div class="cycle-card-phase" style="color:var(--gold)">'${dec.current_year_digit || '—'} Year</div>
     <div class="cycle-card-desc">Hist. avg return: <strong style="color:var(--gold2)">+${dec.sp500_avg_return_year6 || '—'}%</strong></div>
-    <div style="display:flex;gap:3px;align-items:flex-end;height:70px;margin-top:6px">${decBars}</div>`;
+    <div style="display:flex;gap:3px;align-items:flex-end;height:70px;margin-top:6px">${decBars}</div>
+    ${sentimentBadge(decSent.s, decSent.label, decSent.tf)}
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;font-style:italic">${decSent.note}</div>`;
   grid.appendChild(decCard);
 }
 
-function makeSimpleCycleCard(title, subtitle, phase, desc, position, color) {
+function makeSimpleCycleCard(title, subtitle, phase, desc, position, color, sentKey, sentPhase) {
+  const sent = sentKey ? ((CYCLE_SENTIMENT[sentKey] || {})[sentPhase] || null) : null;
   const card = document.createElement('div');
   card.className = 'cycle-card';
   card.innerHTML = `
@@ -786,7 +808,8 @@ function makeSimpleCycleCard(title, subtitle, phase, desc, position, color) {
     <div class="progress-wrap">
       <div class="progress-label"><span>Cycle start</span><span>${position}%</span></div>
       <div class="progress-bar"><div class="progress-fill" style="width:${position}%;background:${color}"></div></div>
-    </div>`;
+    </div>
+    ${sent ? sentimentBadge(sent.s, sent.label, sent.tf) + `<div style="font-size:9px;color:var(--muted);margin-top:4px;font-style:italic">${sent.note}</div>` : ''}`;
   return card;
 }
 
@@ -858,6 +881,18 @@ function formatDate(iso) {
   } catch { return iso; }
 }
 
+function angleToPhase(deg) {
+  const a = (deg || 0) % 360;
+  if (a < 45)  return 'trough';
+  if (a < 90)  return 'early_expansion';
+  if (a < 135) return 'expansion';
+  if (a < 180) return 'overheating';
+  if (a < 225) return 'peak';
+  if (a < 270) return 'recession';
+  if (a < 315) return 'late_recession';
+  return 'trough';
+}
+
 const PHASE_CONFIG = {
   trough:          { label: 'Trough',          color: '#6366F1', description: 'Economic bottom. Credit conditions tight. Leading indicators turning up.' },
   early_expansion: { label: 'Early Expansion',  color: '#38BDF8', description: 'Recovery gaining momentum. PMIs rising, employment stabilizing.' },
@@ -868,9 +903,89 @@ const PHASE_CONFIG = {
   late_recession:  { label: 'Late Recession',   color: '#A78BFA', description: 'Deepest phase. Lagging indicators still weak. Policy easing in progress.' },
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// EVENTS
-// ═══════════════════════════════════════════════════════════════════
+// ── Cycle Sentiment Config ────────────────────────────────────────
+// sentiment: 'bullish' | 'bearish' | 'neutral' | 'cautious'
+const CYCLE_SENTIMENT = {
+  kondratieff: {
+    Winter:          { s:'cautious', label:'Cautiously Bullish', tf:'Very Long-Term (10–20Y)', note:'Bottoming zone — next season (Spring) historically very bullish' },
+    Spring:          { s:'bullish',  label:'Bullish',            tf:'Long-Term (10–20Y)',      note:'New credit expansion, rising asset prices' },
+    Summer:          { s:'neutral',  label:'Neutral',            tf:'Long-Term (10–20Y)',      note:'Inflationary plateau, real returns compress' },
+    Autumn:          { s:'cautious', label:'Cautious',           tf:'Long-Term (10–20Y)',      note:'Debt peak, speculative excesses building' },
+  },
+  juglar: {
+    'Early Recovery': { s:'bullish',  label:'Bullish',  tf:'Medium-Term (1–3Y)', note:'Investment cycle restarting, capex rising' },
+    'Expansion':      { s:'bullish',  label:'Bullish',  tf:'Medium-Term (1–3Y)', note:'Broad investment growth, corporate profits rising' },
+    'Late Expansion': { s:'cautious', label:'Cautious', tf:'Medium-Term (1–2Y)', note:'Cycle maturing — watch for capex peak signals' },
+    'Contraction':    { s:'bearish',  label:'Bearish',  tf:'Medium-Term (1–3Y)', note:'Investment pullback, credit tightening' },
+  },
+  kitchin: {
+    'Restocking':     { s:'bullish',  label:'Bullish',  tf:'Short-Term (3–9M)',  note:'Inventory rebuild supports industrial output' },
+    'Inventory Build':{ s:'neutral',  label:'Neutral',  tf:'Short-Term (3–9M)',  note:'Peak build approaching — watch for destocking' },
+    'Destocking':     { s:'bearish',  label:'Bearish',  tf:'Short-Term (3–9M)',  note:'Inventory liquidation pressures earnings' },
+    'Trough':         { s:'bullish',  label:'Bullish',  tf:'Short-Term (3–9M)',  note:'Cycle bottoming — early restocking signal' },
+  },
+  kuznets: {
+    'Early Expansion':{ s:'bullish',  label:'Bullish',  tf:'Long-Term (5–10Y)',  note:'Real estate & infrastructure boom starting' },
+    'Expansion':      { s:'bullish',  label:'Bullish',  tf:'Long-Term (5–10Y)',  note:'Construction cycle in full swing' },
+    'Late Expansion': { s:'cautious', label:'Cautious', tf:'Medium-Term (2–5Y)', note:'Real estate nearing peak — valuation stretched' },
+    'Contraction':    { s:'bearish',  label:'Bearish',  tf:'Medium-Term (3–7Y)', note:'Real estate correction, construction slowdown' },
+  },
+  credit: {
+    'Easing':             { s:'bullish',  label:'Bullish',  tf:'Short-Medium (6–18M)', note:'Looser credit = fuel for equity & credit rally' },
+    'Tightening':         { s:'bearish',  label:'Bearish',  tf:'Short-Medium (6–18M)', note:'Tighter standards = headwind for growth & equities' },
+    'Tightening Plateau': { s:'cautious', label:'Cautious', tf:'Short-Term (3–12M)',   note:'Spread compression stalling — tail risk remains' },
+    'Loosening':          { s:'bullish',  label:'Bullish',  tf:'Short-Medium (6–18M)', note:'Credit cycle turning — early risk-on signal' },
+  },
+  commodity: {
+    'Early Bull':  { s:'bullish',  label:'Bullish',  tf:'Medium-Term (1–3Y)', note:'Commodity supercycle upswing — energy & materials outperform' },
+    'Bull':        { s:'bullish',  label:'Bullish',  tf:'Medium-Term (1–3Y)', note:'Strong demand + constrained supply drives prices' },
+    'Recovery':    { s:'cautious', label:'Neutral',  tf:'Medium-Term (1–2Y)', note:'Recovering from bear — confirmation needed' },
+    'Bear':        { s:'bearish',  label:'Bearish',  tf:'Medium-Term (1–3Y)', note:'Oversupply or demand destruction — defensive posture' },
+  },
+  real_estate: {
+    'Early Expansion': { s:'bullish',  label:'Bullish',  tf:'Long-Term (5–10Y)',  note:'18-year cycle restarting — real assets attractive' },
+    'Expansion':       { s:'bullish',  label:'Bullish',  tf:'Long-Term (5–10Y)',  note:'Land prices rising, construction boom' },
+    'Late Cycle':      { s:'cautious', label:'Cautious', tf:'Medium-Term (2–5Y)', note:'Late Harrison cycle — peak within 3–5 years' },
+    'Contraction':     { s:'bearish',  label:'Bearish',  tf:'Medium-Term (3–7Y)', note:'Cycle downturn, mortgage stress rising' },
+  },
+  earnings: {
+    'Trough':      { s:'bullish',  label:'Bullish',  tf:'Short-Medium (6–12M)', note:'EPS bottoming — forward revisions turning positive' },
+    'Expansion':   { s:'bullish',  label:'Bullish',  tf:'Short-Medium (6–18M)', note:'Positive revisions + EPS growth = equity tailwind' },
+    'Deceleration':{ s:'cautious', label:'Cautious', tf:'Short-Term (3–9M)',    note:'Growth slowing, beats harder to come by' },
+    'Contraction': { s:'bearish',  label:'Bearish',  tf:'Short-Medium (6–12M)', note:'Negative revisions — earnings recession risk' },
+  },
+  fed_rate: {
+    'Hiking':  { s:'bearish',  label:'Bearish',  tf:'Short-Medium (6–18M)', note:'Rising rates = valuation compression & credit cost rise' },
+    'Pause':   { s:'neutral',  label:'Neutral',  tf:'Short-Term (3–9M)',    note:'Fed on hold — market awaits pivot confirmation' },
+    'Cutting': { s:'bullish',  label:'Bullish',  tf:'Short-Medium (6–18M)', note:'Rate cuts historically bullish for equities & bonds' },
+  },
+  seasonal: {
+    positive: { s:'bullish', label:'Bullish Month',  tf:'Very Short-Term (1M)', note:'Historically positive month for S&P 500' },
+    negative: { s:'bearish', label:'Bearish Month',  tf:'Very Short-Term (1M)', note:'Historically weak month — consider risk reduction' },
+    neutral:  { s:'neutral', label:'Neutral Month',  tf:'Very Short-Term (1M)', note:'Mixed historical returns for this month' },
+  },
+  decennial: {
+    strong:  { s:'bullish',  label:'Strong Year',   tf:'Short-Term (1Y)', note:'This year-digit has historically outperformed' },
+    average: { s:'neutral',  label:'Average Year',  tf:'Short-Term (1Y)', note:'Near-average historical returns for this year-digit' },
+    weak:    { s:'cautious', label:'Weak Year',     tf:'Short-Term (1Y)', note:'Below-average historical returns — manage expectations' },
+    negative:{ s:'bearish',  label:'Negative Year', tf:'Short-Term (1Y)', note:'Historically negative year-digit on average' },
+  },
+};
+
+function sentimentBadge(s, label, tf) {
+  const cfg = {
+    bullish:  { color:'#34D399', icon:'▲', bg:'rgba(52,211,153,0.1)',  border:'rgba(52,211,153,0.35)'  },
+    bearish:  { color:'#F87171', icon:'▼', bg:'rgba(248,113,113,0.1)', border:'rgba(248,113,113,0.35)' },
+    cautious: { color:'#FBBF24', icon:'◆', bg:'rgba(251,191,36,0.1)',  border:'rgba(251,191,36,0.35)'  },
+    neutral:  { color:'#94A3B8', icon:'→', bg:'rgba(148,163,184,0.1)', border:'rgba(148,163,184,0.3)'  },
+  };
+  const c = cfg[s] || cfg.neutral;
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:5px 8px;background:${c.bg};border:1px solid ${c.border};border-radius:1px">
+    <span style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.12em;color:${c.color}">${c.icon} ${label}</span>
+    <span style="font-size:9px;color:var(--muted)">${tf}</span>
+  </div>`;
+}
+
 
 document.getElementById('region-bar').addEventListener('click', e => {
   const btn = e.target.closest('.region-btn');
