@@ -1,0 +1,63 @@
+name: Refresh Economic Indicators
+
+on:
+  # Every day at 18:00 UTC = 19:00 CET (winter) / 20:00 CEST (summer)
+  schedule:
+    - cron: "0 18 * * *"
+
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── 1. Checkout repo ──────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # ── 2. Set up Python ──────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # ── 3. Install dependencies ───────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests yfinance
+
+      # ── 4. Run fetch script ───────────────────────────────────────────────
+      - name: Fetch & update indicators
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          cd src
+          python fetch_indicators.py
+
+      # ── 5. Commit only if data changed ────────────────────────────────────
+      - name: Commit updated data (if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add data/indicators.json
+
+          # Only commit if there's something staged
+          if git diff --cached --quiet; then
+            echo "ℹ️ No changes in indicators.json — skipping commit."
+          else
+            TIMESTAMP=$(date -u "+%Y-%m-%d %H:%M UTC")
+            git commit -m "chore: refresh indicators [${TIMESTAMP}]"
+            git push
+            echo "✅ indicators.json committed and pushed."
+          fi
