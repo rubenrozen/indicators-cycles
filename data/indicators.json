@@ -1,13 +1,13 @@
 {
   "meta": {
-    "last_updated": "2026-03-11T21:49:40Z",
+    "last_updated": "2026-03-11T22:12:53Z",
     "version": "1.0"
   },
   "regions": {
     "US": {
-      "cycle_score": 0.295,
-      "cycle_angle_deg": 107.1,
-      "cycle_phase": "expansion",
+      "cycle_score": 0.285,
+      "cycle_angle_deg": 216.9,
+      "cycle_phase": "peak",
       "indicators": {
         "leading": [
           {
@@ -294,9 +294,9 @@
       }
     },
     "EU": {
-      "cycle_score": 0.64,
-      "cycle_angle_deg": 129.8,
-      "cycle_phase": "expansion",
+      "cycle_score": 0.184,
+      "cycle_angle_deg": 144.4,
+      "cycle_phase": "overheating",
       "indicators": {
         "leading": [],
         "coincident": [
@@ -366,9 +366,9 @@
       }
     },
     "CN": {
-      "cycle_score": 0.0,
-      "cycle_angle_deg": 90.0,
-      "cycle_phase": "expansion",
+      "cycle_score": -0.145,
+      "cycle_angle_deg": 79.0,
+      "cycle_phase": "early_expansion",
       "indicators": {
         "leading": [],
         "coincident": [
@@ -408,9 +408,9 @@
       }
     },
     "JP": {
-      "cycle_score": -0.299,
-      "cycle_angle_deg": 72.6,
-      "cycle_phase": "early_expansion",
+      "cycle_score": -0.121,
+      "cycle_angle_deg": 162.7,
+      "cycle_phase": "overheating",
       "indicators": {
         "leading": [],
         "coincident": [
