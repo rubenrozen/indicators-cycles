@@ -1,6 +1,6 @@
 {
   "meta": {
-    "last_updated": "2026-03-11T21:32:04Z",
+    "last_updated": "2026-03-11T21:49:40Z",
     "version": "1.0"
   },
   "regions": {
@@ -294,8 +294,8 @@
       }
     },
     "EU": {
-      "cycle_score": 0.0,
-      "cycle_angle_deg": 90.0,
+      "cycle_score": 0.64,
+      "cycle_angle_deg": 129.8,
       "cycle_phase": "expansion",
       "indicators": {
         "leading": [],
@@ -324,7 +324,7 @@
         "lagging": [
           {
             "id": "EU_CPI_WB",
-            "name": "CPI Inflation (WB)",
+            "name": "CPI Inflation (YoY)",
             "value": 2.185,
             "previous": 5.7843,
             "date": "2024",
@@ -335,6 +335,26 @@
           {
             "id": "EU_UNEMP_WB",
             "name": "Unemployment (WB)",
+            "value": 6.3314,
+            "previous": 6.3863,
+            "date": "2025",
+            "unit": "%",
+            "source": "WorldBank",
+            "category": "lagging"
+          },
+          {
+            "id": "EU_CPI",
+            "name": "HICP Inflation (YoY)",
+            "value": 2.0,
+            "previous": 2.1,
+            "date": "2025-12",
+            "unit": "%",
+            "source": "Eurostat",
+            "category": "lagging"
+          },
+          {
+            "id": "EU_UNEMP",
+            "name": "Unemployment Rate",
             "value": 6.3314,
             "previous": 6.3863,
             "date": "2025",
@@ -376,7 +396,7 @@
         "lagging": [
           {
             "id": "CN_CPI_WB",
-            "name": "CPI Inflation (WB)",
+            "name": "CPI Inflation (YoY)",
             "value": 0.2181,
             "previous": 0.2348,
             "date": "2024",
@@ -408,10 +428,20 @@
         "lagging": [
           {
             "id": "JP_CPI_WB",
-            "name": "CPI Inflation (WB)",
+            "name": "CPI Inflation (YoY)",
             "value": 2.7385,
             "previous": 3.2681,
             "date": "2024",
+            "unit": "%",
+            "source": "WorldBank",
+            "category": "lagging"
+          },
+          {
+            "id": "JP_UNEMP",
+            "name": "Unemployment Rate",
+            "value": 2.451,
+            "previous": 2.5,
+            "date": "2025",
             "unit": "%",
             "source": "WorldBank",
             "category": "lagging"
@@ -536,12 +566,12 @@
     },
     "fed_rate": {
       "phase": "Cutting",
-      "current_rate": 4.25,
+      "current_rate": 3.64,
       "cycle_peak": 5.5,
       "cycle_trough_est": 3.0,
       "cuts_delivered": 5,
       "cuts_remaining_est": 5,
-      "position_pct": 50
+      "position_pct": 74.4
     }
   }
 }
