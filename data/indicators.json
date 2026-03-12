@@ -1,11 +1,11 @@
 {
   "meta": {
-    "last_updated": "2026-03-11T22:12:53Z",
+    "last_updated": "2026-03-12T18:57:51Z",
     "version": "1.0"
   },
   "regions": {
     "US": {
-      "cycle_score": 0.285,
+      "cycle_score": 0.277,
       "cycle_angle_deg": 216.9,
       "cycle_phase": "peak",
       "indicators": {
@@ -34,8 +34,8 @@
             "id": "ICSA",
             "name": "Initial Jobless Claims",
             "value": 213000.0,
-            "previous": 213000.0,
-            "date": "2026-02-28",
+            "previous": 214000.0,
+            "date": "2026-03-07",
             "unit": "#",
             "source": "FRED",
             "category": "leading"
@@ -53,9 +53,9 @@
           {
             "id": "PERMIT",
             "name": "Building Permits",
-            "value": 1448.0,
-            "previous": 1388.0,
-            "date": "2025-12-01",
+            "value": 1376.0,
+            "previous": 1455.0,
+            "date": "2026-01-01",
             "unit": "K",
             "source": "FRED",
             "category": "leading"
@@ -73,9 +73,9 @@
           {
             "id": "BAMLH0A0HYM2",
             "name": "HY Credit Spread (OAS)",
-            "value": 3.06,
-            "previous": 3.19,
-            "date": "2026-03-10",
+            "value": 3.09,
+            "previous": 3.06,
+            "date": "2026-03-11",
             "unit": "%",
             "source": "FRED",
             "category": "leading"
@@ -472,7 +472,7 @@
         "year3": 16.4,
         "year4": 6.6
       },
-      "sp500_current_ytd": -1.21
+      "sp500_current_ytd": -2.5
     },
     "kondratieff": {
       "current_season": "Winter",
