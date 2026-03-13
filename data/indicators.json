@@ -1,21 +1,21 @@
 {
   "meta": {
-    "last_updated": "2026-03-12T18:57:51Z",
+    "last_updated": "2026-03-13T18:46:23Z",
     "version": "1.0"
   },
   "regions": {
     "US": {
-      "cycle_score": 0.277,
-      "cycle_angle_deg": 216.9,
+      "cycle_score": 0.272,
+      "cycle_angle_deg": 217.7,
       "cycle_phase": "peak",
       "indicators": {
         "leading": [
           {
             "id": "T10Y2Y",
             "name": "Yield Curve 10Y-2Y",
-            "value": 0.57,
-            "previous": 0.58,
-            "date": "2026-03-11",
+            "value": 0.51,
+            "previous": 0.57,
+            "date": "2026-03-12",
             "unit": "%",
             "source": "FRED",
             "category": "leading"
@@ -63,9 +63,9 @@
           {
             "id": "NEWORDER",
             "name": "Mfg. New Orders",
-            "value": 79242.0,
-            "previous": 78621.0,
-            "date": "2025-12-01",
+            "value": 79265.0,
+            "previous": 79286.0,
+            "date": "2026-01-01",
             "unit": "B$",
             "source": "FRED",
             "category": "leading"
@@ -73,9 +73,9 @@
           {
             "id": "BAMLH0A0HYM2",
             "name": "HY Credit Spread (OAS)",
-            "value": 3.09,
-            "previous": 3.06,
-            "date": "2026-03-11",
+            "value": 3.17,
+            "previous": 3.09,
+            "date": "2026-03-12",
             "unit": "%",
             "source": "FRED",
             "category": "leading"
@@ -178,9 +178,9 @@
           {
             "id": "PI",
             "name": "Personal Income",
-            "value": 26512.3,
-            "previous": 26426.1,
-            "date": "2025-12-01",
+            "value": 26698.9,
+            "previous": 26585.1,
+            "date": "2026-01-01",
             "unit": "B$",
             "source": "FRED",
             "category": "coincident"
@@ -472,7 +472,7 @@
         "year3": 16.4,
         "year4": 6.6
       },
-      "sp500_current_ytd": -2.5
+      "sp500_current_ytd": -2.99
     },
     "kondratieff": {
       "current_season": "Winter",
