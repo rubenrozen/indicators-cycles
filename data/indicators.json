@@ -1,12 +1,12 @@
 {
   "meta": {
-    "last_updated": "2026-03-15T18:42:23Z",
+    "last_updated": "2026-03-16T19:05:34Z",
     "version": "1.0"
   },
   "regions": {
     "US": {
       "cycle_score": 0.274,
-      "cycle_angle_deg": 216.8,
+      "cycle_angle_deg": 216.1,
       "cycle_phase": "peak",
       "indicators": {
         "leading": [
@@ -73,9 +73,9 @@
           {
             "id": "BAMLH0A0HYM2",
             "name": "HY Credit Spread (OAS)",
-            "value": 3.17,
-            "previous": 3.09,
-            "date": "2026-03-12",
+            "value": 3.28,
+            "previous": 3.17,
+            "date": "2026-03-13",
             "unit": "%",
             "source": "FRED",
             "category": "leading"
@@ -148,9 +148,9 @@
           {
             "id": "INDPRO",
             "name": "Industrial Production",
-            "value": 102.3412,
-            "previous": 101.6296,
-            "date": "2026-01-01",
+            "value": 102.551,
+            "previous": 102.3963,
+            "date": "2026-02-01",
             "unit": "idx",
             "source": "FRED",
             "category": "coincident"
@@ -188,9 +188,9 @@
           {
             "id": "TCU",
             "name": "Capacity Utilization",
-            "value": 76.2119,
-            "previous": 75.7433,
-            "date": "2026-01-01",
+            "value": 76.2946,
+            "previous": 76.2529,
+            "date": "2026-02-01",
             "unit": "%",
             "source": "FRED",
             "category": "coincident"
@@ -472,7 +472,7 @@
         "year3": 16.4,
         "year4": 6.6
       },
-      "sp500_current_ytd": -3.3
+      "sp500_current_ytd": NaN
     },
     "kondratieff": {
       "current_season": "Winter",
