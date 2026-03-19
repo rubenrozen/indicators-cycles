@@ -1,21 +1,21 @@
 {
   "meta": {
-    "last_updated": "2026-03-18T19:04:18Z",
+    "last_updated": "2026-03-19T19:02:05Z",
     "version": "1.0"
   },
   "regions": {
     "US": {
-      "cycle_score": 0.272,
-      "cycle_angle_deg": 217.1,
+      "cycle_score": 0.273,
+      "cycle_angle_deg": 217.6,
       "cycle_phase": "peak",
       "indicators": {
         "leading": [
           {
             "id": "T10Y2Y",
             "name": "Yield Curve 10Y-2Y",
-            "value": 0.52,
-            "previous": 0.55,
-            "date": "2026-03-17",
+            "value": 0.5,
+            "previous": 0.52,
+            "date": "2026-03-18",
             "unit": "%",
             "source": "FRED",
             "category": "leading"
@@ -33,9 +33,9 @@
           {
             "id": "ICSA",
             "name": "Initial Jobless Claims",
-            "value": 213000.0,
-            "previous": 214000.0,
-            "date": "2026-03-07",
+            "value": 205000.0,
+            "previous": 213000.0,
+            "date": "2026-03-14",
             "unit": "#",
             "source": "FRED",
             "category": "leading"
@@ -73,9 +73,9 @@
           {
             "id": "BAMLH0A0HYM2",
             "name": "HY Credit Spread (OAS)",
-            "value": 3.22,
-            "previous": 3.27,
-            "date": "2026-03-17",
+            "value": 3.2,
+            "previous": 3.22,
+            "date": "2026-03-18",
             "unit": "%",
             "source": "FRED",
             "category": "leading"
@@ -472,7 +472,7 @@
         "year3": 16.4,
         "year4": 6.6
       },
-      "sp500_current_ytd": -3.04
+      "sp500_current_ytd": -3.63
     },
     "kondratieff": {
       "current_season": "Winter",
